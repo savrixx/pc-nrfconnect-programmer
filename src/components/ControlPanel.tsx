@@ -146,7 +146,7 @@ const Mru = ({ mruFiles }: { mruFiles: string[] }) => {
                     )}
                     <Dropdown.Divider />
                     <Dropdown.Item
-                        /* @ts-ignore This works */
+                        /* @ts-expect-error This works */
                         onSelect={onSelect}
                         style={{ fontWeight: 700 }}
                     >
