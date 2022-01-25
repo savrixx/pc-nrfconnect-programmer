@@ -4,14 +4,23 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-import nrfdl, {
+import {
     Device,
+    deviceControlGetProtectionStatus,
+    deviceControlRecover,
+    deviceControlReset,
+    DeviceCore,
     Error as NrfdlError,
+    firmwareProgram,
+    firmwareRead,
     FirmwareReadResult,
+    getDeviceCoreInfo,
+    JLink,
+    Progress,
     ProtectionStatus,
 } from '@nordicsemiconductor/nrf-device-lib-js';
 import { remote } from 'electron';
-import fs from 'fs';
+import { writeFile } from 'fs';
 import MemoryMap, { MemoryMaps } from 'nrf-intel-hex';
 import { getDeviceLibContext, logger, usageData } from 'pc-nrfconnect-shared';
 
@@ -67,7 +76,7 @@ export const isJlink = (vid?: number, pid?: number) =>
  */
 export const loadProtectionStatus = async (
     deviceId: number,
-    deviceCoreName: nrfdl.DeviceCore
+    deviceCoreName: DeviceCore
 ): Promise<ProtectionStatus> => {
     try {
         logger.info(
@@ -77,7 +86,7 @@ export const loadProtectionStatus = async (
         );
         // TODO: fix type in nrfdl: snake_case
         const protectionStatus = (
-            await nrfdl.deviceControlGetProtectionStatus(
+            await deviceControlGetProtectionStatus(
                 getDeviceLibContext(),
                 deviceId,
                 deviceCoreName
@@ -158,7 +167,7 @@ const logDeviceInfo = (device: Device) => {
         deviceFamily,
         deviceVersion,
         boardVersion,
-    } = device.jlink;
+    } = device.jlink as JLink;
     logger.info('JLink OB firmware version', jlinkObFirmwareVersion);
     usageData.sendUsageData(
         EventAction.OPEN_DEVICE_JLINK_OB,
@@ -189,7 +198,7 @@ const logDeviceInfo = (device: Device) => {
 const getDeviceMemMap = async (deviceId: number, coreInfo: CoreDefinition) => {
     return (await new Promise(resolve => {
         logger.info(`Reading memory for ${coreInfo.name} core`);
-        nrfdl.firmwareRead(
+        firmwareRead(
             getDeviceLibContext(),
             deviceId,
             'NRFDL_FW_BUFFER',
@@ -339,7 +348,7 @@ export const recoverOneCore =
         logger.info(`Recovering ${coreInfo.name} core`);
 
         try {
-            await nrfdl.deviceControlRecover(
+            await deviceControlRecover(
                 getDeviceLibContext(),
                 deviceId,
                 coreInfo.name
@@ -401,7 +410,7 @@ const writeHex = (
     new Promise<void>(resolve => {
         logger.info(`Writing HEX to ${coreInfo.name} core`);
 
-        nrfdl.firmwareProgram(
+        firmwareProgram(
             getDeviceLibContext(),
             deviceId,
             'NRFDL_FW_BUFFER',
@@ -415,7 +424,7 @@ const writeHex = (
                 logger.info(`Writing HEX to ${coreInfo.name} core completed`);
                 resolve();
             },
-            ({ progressJson: progress }: nrfdl.Progress.CallbackParameters) => {
+            ({ progressJson: progress }: Progress.CallbackParameters) => {
                 const status = `${progress.message.replace('.', ':')} ${
                     progress.progressPercentage
                 }%`;
@@ -516,7 +525,7 @@ export const resetDevice =
         const { device: inputDevice } = getState().app.target;
         const device = inputDevice as Device;
 
-        await nrfdl.deviceControlReset(getDeviceLibContext(), device.id);
+        await deviceControlReset(getDeviceLibContext(), device.id);
         logger.info(`Resetting device completed`);
     };
 
@@ -547,7 +556,7 @@ export const saveAsFile = () => (_: TDispatch, getState: () => RootState) => {
                 return;
             }
 
-            fs.writeFile(filePath, data, err => {
+            writeFile(filePath, data, err => {
                 if (err) {
                     logger.error(`Failed to save file: ${err.message || err}`);
                 }
@@ -572,7 +581,7 @@ const updateCoresWithNrfdl = async (
             if (protectionStatus !== 'NRFDL_PROTECTION_STATUS_NONE') {
                 return core;
             }
-            const deviceCoreInfo = await nrfdl.getDeviceCoreInfo(
+            const deviceCoreInfo = await getDeviceCoreInfo(
                 getDeviceLibContext(),
                 device.id,
                 core.name

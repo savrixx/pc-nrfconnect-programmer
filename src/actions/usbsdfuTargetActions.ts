@@ -11,10 +11,9 @@ import {
     firmwareProgram,
     FWInfo,
     Progress,
-    // @ts-expect-error -- type error from nrfdl, remove when fixed
     readFwInfo,
 } from '@nordicsemiconductor/nrf-device-lib-js';
-import Crypto from 'crypto';
+import { createHash } from 'crypto';
 import MemoryMap from 'nrf-intel-hex';
 import {
     defaultInitPacket,
@@ -128,8 +127,6 @@ export const openDevice =
                 romPageSize: 0x1000, // 4Kb
             };
             const deviceInfo = getDeviceInfoByUSB(
-                // TODO: fix type in nrfdl
-                // @ts-expect-error -- type error from nrfdl, remove when fixed
                 device.hwInfo || defaultHwInfo
             );
             dispatch(targetInfoKnown(deviceInfo));
@@ -339,7 +336,7 @@ export const canWrite =
  * @returns {Buffer} the calculated hash
  */
 const calculateSHA256Hash = (image = new Uint8Array()) => {
-    const digest = Crypto.createHash('sha256');
+    const digest = createHash('sha256');
     digest.update(image);
     return Buffer.from(digest.digest().reverse());
 };
@@ -351,7 +348,7 @@ const calculateSHA256Hash = (image = new Uint8Array()) => {
  * @returns {Buffer} the calculated hash
  */
 const calculateSHA512Hash = (image = new Uint8Array()) => {
-    const digest = Crypto.createHash('sha512');
+    const digest = createHash('sha512');
     digest.update(image);
     return Buffer.from(digest.digest().reverse());
 };

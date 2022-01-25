@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-import nrfdl, {
+import {
+    Device,
     DeviceCore,
     DeviceCoreInfo,
     ProtectionStatus,
@@ -253,10 +254,8 @@ export const getDeviceInfoByUSB = (
 };
 
 // Get device info by calling @nordicsemiconductor/nrf-device-lib-js
-export const getDeviceInfoByJlink = (
-    device: nrfdl.Device
-): DeviceDefinition => {
-    const family = (device.jlink.deviceFamily ??
+export const getDeviceInfoByJlink = (device: Device): DeviceDefinition => {
+    const family = (device.jlink?.deviceFamily ??
         DeviceFamily.UNKNOWN) as DeviceFamily;
 
     return {
