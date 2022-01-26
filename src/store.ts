@@ -17,14 +17,10 @@ interface Settings {
 }
 
 const store = getPersistentStore<StoreSchema>();
-const set = store.set.bind(store);
-const get = store.get.bind(store);
 
-export const setSettings = (settings: Settings) => {
-    set('settings', settings);
-};
+export const getSettings = () => store.get('settings');
+export const setSettings = (settings: Settings) =>
+    store.set('settings', settings);
 
-export const getSettings = () => get('settings');
-
-export const getMruFiles = () => get('mruFiles') ?? [];
-export const setMruFiles = (files: string[]) => set('mruFiles', files);
+export const getMruFiles = () => store.get('mruFiles') ?? [];
+export const setMruFiles = (files: string[]) => store.set('mruFiles', files);
